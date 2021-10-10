@@ -182,4 +182,4 @@ async def duelo(ctx, arg, arg2):
 
     
 
-client.run('NzQyMzMxODEzNTM5ODcyNzk4.XzEkYA.VvUgGRN-0XOSfdTMhVORaeFVM7k')
+client.run('SECRET-TOKEN')
