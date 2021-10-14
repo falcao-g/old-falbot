@@ -1,6 +1,7 @@
 import json
 
 def cria_banco(pessoa):
+    assert pessoa.isnumeric()
     with open('falbot2.json', 'r') as f:
             banco = json.load(f)
     try:
