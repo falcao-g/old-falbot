@@ -1,3 +1,4 @@
+
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions
@@ -8,9 +9,9 @@ from aternosapi import AternosAPI
 from funcoes import *
 import time
 
-headers_cookie = "ATERNOS_SEC_o393mvvlhqa00000=hobt7nyuf0k00000; __cfduid=d59d8b32263dbb9cabf79ef3d31abeb971600109203; _ga=GA1.2.405738038.1600109207; _gid=GA1.2.65661332.1600109207; ATERNOS_SESSION=vwLUDu3aeQYaQyS3FcJ7GHUGKT3nmgDoHFmHKtwlumK1ExzgqDpws1xyWcQYsnObOAOdVUOU2q8yn5DUkOER5DrIJQhX3KLDbTxF; __gads=ID=3da6e8ad584b8867:T=1600110888:S=ALNI_MZG_60N0rgeQMcbVSU3yDVuEgNaWw; SKpbjs-unifiedid=%7B%22TDID%22%3A%22b393d141-1a89-4358-a8e0-2a21dc2ccf77%22%2C%22TDID_LOOKUP%22%3A%22FALSE%22%2C%22TDID_CREATED_AT%22%3A%222020-09-14T19%3A12%3A15%22%7D; SKpbjs-unifiedid_last=Mon%2C%2014%20Sep%202020%2019%3A12%3A15%20GMT; SKpbjs-id5id=%7B%22ID5ID%22%3A%22ID5-ZHMOWTG3aMOoikJ8kOLovSVwJlmczM7o2dymoGhePg%22%2C%22ID5ID_CREATED_AT%22%3A%222020-09-14T19%3A12%3A15.882Z%22%2C%22ID5_CONSENT%22%3Atrue%2C%22CASCADE_NEEDED%22%3Atrue%2C%22ID5ID_LOOKUP%22%3Afalse%2C%223PIDS%22%3A%5B%5D%7D; SKpbjs-id5id_last=Mon%2C%2014%20Sep%202020%2019%3A12%3A16%20GMT; cto_bundle=FKtmm18wSTdhcjZ2VDMlMkZaTVdHbHd3cW1nVlZyUWpVNW1nc0YzOSUyRldBd1doalBJWUc4M0pCa2NCaXNGS2hERXRaRnJLall3NFVSUkV1Y3ZkbU55enVRTHUlMkZCeUtvMm50N3V6ODZaZUF2MHZtTkJTQ3JXN2s5cllrZ1JPdXJqdWJ0aTVhbG8zR0gxVm91djVyYTdBbU9jWGJpa3clM0QlM0Q; cnx_userId=3b52d7fb5beb44e9bf9058e792abba71; ATERNOS_SERVER=kOOyQDQSLLj2Xni7; _gat=1"
-cookie = "IiH8ERcQwdhqj3ZMGaVKCkxa38vc8fOrBUGHFeCfLMFOTXjAg4T2YV7XiHx8acoFyddKDCfqnVbV69eR4RfVDMbREMj8CU0p8Q9h"
-ASEC = "o393mvvlhqa00000:hobt7nyuf0k00000"
+headers_cookie = "headers_cookie"
+cookie = "cookie"
+ASEC = "ASEC"
 epromo = 1
 elootbox = 1
 eaposta = 1
@@ -21,15 +22,29 @@ def get_prefix(client, message):
     with open('prefixos.json', 'r') as f:
         prefixos = json.load(f)
     
-    return prefixos[str(message.guild.id)]
+    try:
+        return prefixos[str(message.guild.id)]
+    except KeyError:
+        with open('prefixos.json', 'r') as f:
+            prefixos = json.load(f)
+    
+        prefixos[str(message.guild.id)] = '?'
+
+        with open('prefixos.json', 'w') as f:
+            json.dump(prefixos, f, indent=4)
+
+        return prefixos[str(message.guild.id)]
 
 client = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
 
 @client.event
 async def on_ready():
-    cancela_evento.start()
-    evento.start()
-    activity = discord.Activity(name='?comandos', type=discord.ActivityType.watching)
+    try:
+        cancela_evento.start()
+        evento.start()
+    except:
+        pass
+    activity = discord.Activity(name='?comandos', type=discord.ActivityType.playing)
     await client.change_presence(activity=activity)
     print('Bot online')
 
@@ -71,7 +86,7 @@ async def cancela_evento():
         eaposta = 1
         epromo = 1
         print('Eventos acabaram')
-        activity = discord.Activity(name='?comandos', type=discord.ActivityType.watching)
+        activity = discord.Activity(name='?comandos', type=discord.ActivityType.playing)
         await client.change_presence(activity=activity)
         print(time.localtime())
 
@@ -84,19 +99,19 @@ async def evento():
     if evento <= 20:
         escolha = random.randint(1,3)
         if escolha == 1:
-            activity = discord.Activity(name='Evento ativado! Apostas rendem 2x', type=discord.ActivityType.watching)
+            activity = discord.Activity(name='?comandos | Evento ativado! Apostas rendem 2x', type=discord.ActivityType.playing)
             await client.change_presence(activity=activity)
             eaposta = 2
             print('Eventos iniciados')
             print(time.localtime())
         elif escolha == 2:
-            activity = discord.Activity(name='Evento ativado! Lootboxs rendem 2x', type=discord.ActivityType.watching)
+            activity = discord.Activity(name='?comandos | Evento ativado! Lootboxs rendem 2x', type=discord.ActivityType.playing)
             await client.change_presence(activity=activity)
             elootbox = 2
             print('Eventos iniciados')
             print(time.localtime())
         else:
-            activity = discord.Activity(name='Evento ativado! Cargos custam metade', type=discord.ActivityType.watching)
+            activity = discord.Activity(name='?comandos | Evento ativado! Cargos custam metade', type=discord.ActivityType.playing)
             await client.change_presence(activity=activity)
             epromo = 2
             print('Eventos iniciados')
