@@ -6,6 +6,9 @@ import asyncio
 import json
 import random
 from funcoes import *
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from time import sleep
 
 epromo = 1
 elootbox = 1
@@ -29,7 +32,7 @@ def get_prefix(client, message):
         return prefixos[str(message.guild.id)]
 
 intents = discord.Intents(messages=True, guilds=True, members=True, reactions=True)
-client = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents)
+client = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents, help_command=None)
 
 @client.event
 async def on_ready():
@@ -111,10 +114,11 @@ async def eu(ctx, arg=''):
     else:
         cria_banco(arg)
     cria_banco(str(ctx.message.author.id))
+    pessoa = client.get_user(int(arg))
     with open('falbot2.json', 'r') as f:
         banco = json.load(f)
     embed = discord.Embed(
-        title=ctx.message.author.name,
+        title=pessoa.name,
         color=discord.Color(000000)
     )
     for key,item in banco[str(arg)].items():
@@ -204,6 +208,8 @@ async def lootbox(ctx):
         async def on_command_error(ctx,error):
             if "You are on cooldown." in str(error):
                 await ctx.send(f'{ctx.message.author.mention} faltam **{tempo_formatado(error)}** para você resgatar a lootbox grátis!')
+            elif "Command not found" in str(error):
+                pass
             else:
                 print(error)
 
@@ -274,13 +280,13 @@ async def duelo(ctx, arg, arg2):
                         muda_saldo(arg, -int(arg2))
                         muda_vitoria(str(ctx.message.author.id))
                         await asyncio.sleep(2)
-                        await ctx.send(f'{ctx.message.author.mention} ganhou os {format(arg2)} reais do duelo! :stuck_out_tongue:')
+                        await ctx.send(f'{ctx.message.author.mention} ganhou os {format(arg2)} falcoins do duelo! :stuck_out_tongue:')
                     else:
                         muda_saldo(str(ctx.message.author.id), -int(arg2))
                         muda_saldo(arg, int(arg2))
                         muda_vitoria(arg)
                         await asyncio.sleep(2)
-                        await ctx.send(f'{user.mention} ganhou os {format(arg2)} reais do duelo! :stuck_out_tongue:')
+                        await ctx.send(f'{user.mention} ganhou os {format(arg2)} falcoins do duelo! :stuck_out_tongue:')
                 else:
                     await ctx.send(f'Duelo cancelado. {user.mention} recusou o duelo! :confounded:')
         else:
@@ -317,16 +323,10 @@ async def rank(ctx, local=True):
     )
     if len(rank) >= 10:
         for c in range(10):
-            try:
-                embed.add_field(name=f"{c+1}° - {users[c].name} falcoins:", value=f'`{format(banco[rank[c]]["Falcoins"])}`', inline=False)
-            except:
-                continue
+            embed.add_field(name=f"{c+1}° - {users[c].name} falcoins:", value=f'`{format(banco[rank[c]]["Falcoins"])}`', inline=False)
     else:
         for c,i in enumerate(users):
-            try:
-                embed.add_field(name=f"{c+1}° - {users[c].name} falcoins:", value=f'`{format(banco[rank[c]]["Falcoins"])}`', inline=False)
-            except:
-                continue
+            embed.add_field(name=f"{c+1}° - {users[c].name} falcoins:", value=f'`{format(banco[rank[c]]["Falcoins"])}`', inline=False)
     embed.set_footer(text='by Falcão ❤️')
     await ctx.send(embed=embed)
 
@@ -370,7 +370,7 @@ async def investir(ctx, arg, arg2):
                             divida = int(int(arg2) + (int(arg2) / 4 * 3))
                         elif role2 in ctx.message.author.roles:
                             divida = int(int(arg2) + int(arg2))
-                        await ctx.send(f'Investimento aceito! {ctx.message.author.mention} depositou {format(arg2)} falcoins na conta de {user.mention}, {ctx.message.author.name} ganhará 10% de tudo que {user.name} ganhar, até cobrir a divida de {format(divida)} zulcoins :open_mouth: :smiling_imp:')
+                        await ctx.send(f'Investimento aceito! {ctx.message.author.mention} depositou {format(arg2)} falcoins na conta de {user.mention}, {ctx.message.author.name} ganhará 10% de tudo que {user.name} ganhar, até cobrir a divida de {format(divida)} falcoins :open_mouth: :smiling_imp:')
                         muda_saldo(str(ctx.message.author.id), -int(arg2))
                         muda_saldo(arg, int(arg2))
                         muda_divida(arg, divida)
@@ -487,6 +487,63 @@ async def prefixo(ctx, arg):
 
 @commands.guild_only()
 @client.command()
+async def tetris(ctx):
+    
+    driver = webdriver.Chrome(ChromeDriverManager().install())
+    driver.get('https://jstris.jezevec10.com/')
+
+    ### creates room
+    lobbyB = driver.find_element_by_id('lobby')
+    lobbyB.click()
+
+    createB = driver.find_element_by_id('createRoomButton')
+    createB.click()
+
+    privateC = driver.find_element_by_id('isPrivate')
+    privateC.click()
+
+    sleep(5)
+
+    createBF = driver.find_element_by_id('create')
+    createBF.click()
+
+    sleep(10)
+
+    joinLink = driver.find_element_by_class_name('joinLink')
+    await ctx.send(joinLink.get_attribute('innerHTML'))
+
+    sleep(30)
+
+    driver.quit()
+
+@commands.guild_only()
+@client.command()
+async def limpa(ctx, arg):
+    canal = ctx.channel
+    messages = await canal.history(limit=int(arg) + 1).flatten()
+    for message in messages:
+        await message.delete()
+
+@commands.guild_only()
+@client.command()
+async def glm(ctx):
+    canal = ctx.channel
+    messages = await canal.history(limit=1).flatten()
+    for message in messages:
+        await message.delete()
+    await ctx.send('Não.')
+
+@commands.guild_only()
+@client.command()
+async def lena(ctx):
+    canal = ctx.channel
+    messages = await canal.history(limit=1).flatten()
+    for message in messages:
+        await message.delete()
+    await ctx.send('Sim.')
+
+@commands.guild_only()
+@client.command(aliases=['help'])
 async def comandos(ctx):
     embed = discord.Embed(
         title='Comandos para sala de jogos',
@@ -494,7 +551,6 @@ async def comandos(ctx):
     )
     embed.add_field(name=f"?eu", value=f'Mostra os seus dados', inline=False)
     embed.add_field(name=f"?lootbox", value=f'Resgata sua lootbox grátis(disponível a cada 30 minutos)', inline=False)
-    embed.add_field(name="?falcoins", value='Mostra o seu saldo atual', inline=False)
     embed.add_field(name=f"?sobre [@pessoa]", value=f'Mostra os dados sobre a pessoa marcada', inline=False)
     embed.add_field(name="?doar [@pessoa] [valor]", value='Doa o valor inserido para a pessoa marcada', inline=False)
     embed.add_field(name=f"?apostar [valor]", value=f'Aposta o valor ou porcentagem indicado, com ganhos até 100%!', inline=False)
@@ -504,6 +560,7 @@ async def comandos(ctx):
     embed.add_field(name=f"?loja", value=f"Retorna a tabela de compras e seus valores", inline=False)
     embed.add_field(name=f"?comprar [Número do item]", value=f"Compra o item citado no parametro se você tem os requisitos")
     embed.add_field(name=f"?investir [@pessoa] [Quantidade]", value=f"Tranfere a quantidade inserida para a pessoa, e ela pagará uma dívida com parte dos ganhos das apostas", inline=False)
+    embed.add_field(name=f'Exemplos', value=f'?sobre @Falcão = retorna os dados do usuário Falcão \n ?eu = retorna os seus dados de usuário \n ?lootbox = Resgata a lootbox se disponível \n ?apostar 10 = aposta 10 falcoins, podendo lucar ou perder \n ?duelo @Falcão 100 = aposta 100 falcoins com falcão em um duelo da sorte \n ?rank = Retorna os 10 primeiros em quantidade de falcoins do servidor \n ?rank_global = Retorna os 10 primeiros em quantidade de falcoins global \n ?loja = Retorna a tabela para compras \n ?comprar 1 = Se tiver todos os requisitos, compra o item número 1 \n ?investir @Falcão 200 = Empresta 200 falcoins a falcão, ao quitar a dívida, você ganhará uma porcentagem a mais dependendo do seu cargo \n ?doar @Falcão 100 = doa 100 falcoins para o usuário Falcão', inline=False)
     embed.set_footer(text='by Falcão ❤️')
     await ctx.send(embed=embed)
     embed1 = discord.Embed(
@@ -512,6 +569,10 @@ async def comandos(ctx):
     )
     embed1.add_field(name=f"?prefixo [Prefixo desejado]", value=f'Muda o prefixo do bot no servidor, OBS: só administradores podem usar', inline=False)
     embed1.add_field(name=f"?sugestao [...]", value=f'Anota sua sugestão para o bot!', inline=False)
+    embed1.add_field(name=f'?help/?comandos', value=f'Devolve a lista de comandos que você está vendo agora', inline=False)
+    embed1.add_field(name=f'?limpa [num. de msgs]', value=f'Limpa o numero de mensagens especificado no canal atual', inline=False)
+    embed1.add_field(name=f'?tetris', value=f'Cria uma sala privada no jstris pra você!', inline=False)
+    embed1.add_field(name=f'Exemplos', value=f'?prefixo ! = muda o prefixo do Falbot no servidor para ! \n ?Limpa 10 = o bot vai excluir a mensagem invocando o comando juntamente com as 10 anteriores')
     embed1.set_footer(text='by Falcão ❤️')
     await ctx.send(embed=embed1)
 
