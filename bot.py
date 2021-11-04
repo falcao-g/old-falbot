@@ -1,37 +1,34 @@
-
 import discord
 from discord.ext import commands, tasks
-from discord.ext.commands import has_permissions
 import asyncio
 import json
 import random
 from funcoes import *
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from time import sleep
+from discord.utils import get
 
 epromo = 1
 elootbox = 1
 eaposta = 1
+status = 1
 
 def get_prefix(client, message):
-    with open('prefixos.json', 'r') as f:
-        prefixos = json.load(f)
+    with open('prefixes.json', 'r') as f:
+        prefixes = json.load(f)
     
     try:
-        return prefixos[str(message.guild.id)]
+        return prefixes[str(message.guild.id)]
     except KeyError:
-        with open('prefixos.json', 'r') as f:
-            prefixos = json.load(f)
+        with open('prefixes.json', 'r') as f:
+            prefixes = json.load(f)
     
-        prefixos[str(message.guild.id)] = '?'
+        prefixes[str(message.guild.id)] = '?'
 
-        with open('prefixos.json', 'w') as f:
-            json.dump(prefixos, f, indent=4)
+        with open('prefixes.json', 'w') as f:
+            json.dump(prefixes, f, indent=4)
 
-        return prefixos[str(message.guild.id)]
+        return prefixes[str(message.guild.id)]
 
-intents = discord.Intents(messages=True, guilds=True, members=True, reactions=True)
+intents = discord.Intents(messages=True, guilds=True, members=True, reactions=True, guild_messages=True)
 client = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents, help_command=None)
 
 @client.event
@@ -39,12 +36,13 @@ async def on_ready():
     try:
         cancela_evento.start()
         evento.start()
+        muda_status.start()
     except:
         pass
-    activity = discord.Activity(name='?comandos', type=discord.ActivityType.playing)
+    activity = discord.Activity(name='?comandos | arte by: @kinsallum', type=discord.ActivityType.playing)
     await client.change_presence(activity=activity)
     print('Bot online')
-
+    
 @client.event
 async def on_guild_join(guild):
     if discord.utils.get(guild.roles, name="Falcão") == None:
@@ -58,32 +56,31 @@ async def on_guild_join(guild):
     if discord.utils.get(guild.roles, name="Pomba") == None:
         await guild.create_role(name="Pomba", colour=discord.Colour(0xD2D4DC))
 
-    with open('prefixos.json', 'r') as f:
-        prefixos = json.load(f)
+    with open('prefixes.json', 'r') as f:
+        prefixes = json.load(f)
     
-    prefixos[str(guild.id)] = '?'
+    prefixes[str(guild.id)] = '?'
 
-    with open('prefixos.json', 'w') as f:
-        json.dump(prefixos, f, indent=4)
+    with open('prefixes.json', 'w') as f:
+        json.dump(prefixes, f, indent=4)
 
 @client.event
 async def on_guild_remove(guild):
-    with open('prefixos.json', 'r') as f:
-        prefixos = json.load(f)
+    with open('prefixes.json', 'r') as f:
+        prefixes = json.load(f)
 
-    prefixos.pop(str(guild.id))
+    prefixes.pop(str(guild.id))
 
 @tasks.loop(minutes=30)
 async def cancela_evento():
     global elootbox
     global eaposta
     global epromo
-    if elootbox == 2 or eaposta == 2 or epromo == 2:
-        elootbox = 1
-        eaposta = 1
-        epromo = 1
-        activity = discord.Activity(name='?comandos', type=discord.ActivityType.playing)
-        await client.change_presence(activity=activity)
+    elootbox = 1
+    eaposta = 1
+    epromo = 1
+    activity = discord.Activity(name='?comandos | arte by: @kinsallum', type=discord.ActivityType.playing)
+    await client.change_presence(activity=activity)
 
 @tasks.loop(hours=2)
 async def evento():
@@ -106,21 +103,59 @@ async def evento():
             await client.change_presence(activity=activity)
             epromo = 2
 
+@tasks.loop(seconds=30)
+async def muda_status():
+    global elootbox
+    global eaposta
+    global epromo
+    global status
+    if eaposta == 1.2:
+        if status == 1:
+            activity = discord.Activity(name='?comandos | Evento ativado! Apostas rendem 1.2x', type=discord.ActivityType.playing)
+            await client.change_presence(activity=activity)
+            status = 0
+        else:
+            activity = discord.Activity(name='?comandos | arte by: @kinsallum', type=discord.ActivityType.playing)
+            await client.change_presence(activity=activity)
+            status = 1
+    elif elootbox == 2:
+        if status == 1:
+            activity = discord.Activity(name='?comandos | Evento ativado! Lootboxs rendem 2x', type=discord.ActivityType.playing)
+            await client.change_presence(activity=activity)
+            status = 0
+        else:
+            activity = discord.Activity(name='?comandos | arte by: @kinsallum', type=discord.ActivityType.playing)
+            await client.change_presence(activity=activity)
+            status = 1
+    elif epromo == 2:
+        if status == 1:
+            activity = discord.Activity(name='?comandos | Evento ativado! Cargos custam metade', type=discord.ActivityType.playing)
+            await client.change_presence(activity=activity)
+            status = 0
+        else:
+            activity = discord.Activity(name='?comandos | arte by: @kinsallum', type=discord.ActivityType.playing)
+            await client.change_presence(activity=activity)
+            status = 1
+    else:
+        activity = discord.Activity(name='?comandos | arte by: @kinsallum', type=discord.ActivityType.playing)
+        await client.change_presence(activity=activity)
+
 @commands.guild_only()
-@client.command()
+@client.command(aliases=['sobre'])
 async def eu(ctx, arg=''):
     if arg == '':
         arg = ctx.message.author.id
     else:
+        arg = arg[3:-1]
         cria_banco(arg)
     cria_banco(str(ctx.message.author.id))
-    pessoa = client.get_user(int(arg))
-    with open('falbot2.json', 'r') as f:
+    pessoa = await ctx.message.guild.fetch_member(int(arg))
+    with open('falbot.json', 'r') as f:
         banco = json.load(f)
     embed = discord.Embed(
-        title=pessoa.name,
         color=discord.Color(000000)
     )
+    embed.set_author(name=pessoa.name, icon_url=pessoa.avatar_url)
     for key,item in banco[str(arg)].items():
         if key != 'Agiota' and key != 'Cargo' and key != 'Audacias':
             embed.add_field(name=key, value=format(item), inline=True)
@@ -132,68 +167,59 @@ async def eu(ctx, arg=''):
 async def apostar(ctx, arg, *args):
     global eaposta
     cria_banco(str(ctx.message.author.id))
-    try:
-        arg = arg_especial(arg, str(ctx.message.author.id))
-        if checa_arquivo(str(ctx.message.author.id), 'Falcoins') >= int(arg) and int(arg) > 0:
-            role = discord.utils.get(ctx.guild.roles, name="Pomba")
-            role1 = discord.utils.get(ctx.guild.roles, name="Pardal")
-            role2 = discord.utils.get(ctx.guild.roles, name="Tucano")
-            role3 = discord.utils.get(ctx.guild.roles, name="Falcão")
-            if role not in ctx.message.author.roles and role1 not in ctx.message.author.roles and role2 not in ctx.message.author.roles and role3 not in ctx.message.author.roles and checa_cargo(str(ctx.message.author.id)) == 0:
-                await ctx.message.author.add_roles(role)
-            elif checa_cargo(str(ctx.message.author.id)) == 1:
-                await ctx.message.author.add_roles(role1)
-            elif checa_cargo(str(ctx.message.author.id)) == 2:
-                await ctx.message.author.add_roles(role2)
-            elif checa_cargo(str(ctx.message.author.id)) == 3:
-                await ctx.message.author.add_roles(role3)
-            sorte = random.randint(0,100)
-            if sorte >= 95:
-                muda_saldo(str(ctx.message.author.id), -int(arg))
-                await ctx.send (f'{ctx.message.author.mention} você perdeu tudo que apostou :pensive: :fist: *Saldo atual*: {format(checa_arquivo(str(ctx.message.author.id), "Falcoins"))}') 
-            elif sorte <= 55:
-                porcentagem = random.randint(10,100)
-                total = int(int((porcentagem * int(arg)) / 100) * eaposta)
+    arg = arg_especial(arg, str(ctx.message.author.id))
+    if checa_arquivo(str(ctx.message.author.id), 'Falcoins') >= int(arg) and int(arg) > 0:
+        role = discord.utils.get(ctx.guild.roles, name="Pomba")
+        role1 = discord.utils.get(ctx.guild.roles, name="Pardal")
+        role2 = discord.utils.get(ctx.guild.roles, name="Tucano")
+        role3 = discord.utils.get(ctx.guild.roles, name="Falcão")
+        if role not in ctx.message.author.roles and role1 not in ctx.message.author.roles and role2 not in ctx.message.author.roles and role3 not in ctx.message.author.roles and checa_cargo(str(ctx.message.author.id)) == 0:
+            await ctx.message.author.add_roles(role)
+        elif checa_cargo(str(ctx.message.author.id)) == 1:
+            await ctx.message.author.add_roles(role1)
+        elif checa_cargo(str(ctx.message.author.id)) == 2:
+            await ctx.message.author.add_roles(role2)
+        elif checa_cargo(str(ctx.message.author.id)) == 3:
+            await ctx.message.author.add_roles(role3)
+        sorte = random.randint(0,100)
+        if sorte >= 95:
+            muda_saldo(str(ctx.message.author.id), -int(arg))
+            await ctx.send (f'{ctx.message.author.mention} você perdeu tudo que apostou :pensive: :fist: *Saldo atual*: {format(checa_arquivo(str(ctx.message.author.id), "Falcoins"))}') 
+        elif sorte <= 55:
+            total = int(int((random.randint(10,100) * int(arg)) / 100) * eaposta)
+            if checa_arquivo(str(ctx.message.author.id), 'Divida') > 0:
                 comissao = int(total/10)
-                if checa_arquivo(str(ctx.message.author.id), 'Divida') > 0:
-                    total -= comissao
-                if total == 0:
-                    total = 1
-                muda_saldo(str(ctx.message.author.id), total)
-                await ctx.send (f'{ctx.message.author.mention} Parabéns! Você lucrou {format(total)} falcoins :sunglasses: *Saldo atual*: {format(checa_arquivo(str(ctx.message.author.id), "Falcoins"))}')
-                if checa_arquivo(str(ctx.message.author.id), 'Divida') > 0:
-                    if comissao == 0:
-                        comissao = 1
-                    if comissao >= checa_arquivo(str(ctx.message.author.id), 'Divida'):
-                        muda_saldo(checa_arquivo(str(ctx.message.author.id),'Agiota'), checa_arquivo(str(ctx.message.author.id), 'Divida'))
-                        user = client.get_user(int(checa_arquivo(str(ctx.message.author.id), 'Agiota')))
-                        await ctx.send(f'{ctx.message.author.name} pagou {format(checa_arquivo(str(ctx.message.author.id), "Divida"))} falcoins de comissão. Restando 0 de débito com {user.name}')
-                        muda_divida(str(ctx.message.author.id), -int(checa_arquivo(str(ctx.message.author.id), 'Divida')))
+                total -= comissao
+            if total == 0:
+                total = 1
+            muda_saldo(str(ctx.message.author.id), total)
+            await ctx.send (f'{ctx.message.author.mention} Parabéns! Você lucrou {format(total)} falcoins :sunglasses: *Saldo atual*: {format(checa_arquivo(str(ctx.message.author.id), "Falcoins"))}')
+            if checa_arquivo(str(ctx.message.author.id), 'Divida') > 0:
+                if comissao == 0:
+                    comissao = 1
+                if comissao >= checa_arquivo(str(ctx.message.author.id), 'Divida'):
+                    muda_saldo(checa_arquivo(str(ctx.message.author.id),'Agiota'), checa_arquivo(str(ctx.message.author.id), 'Divida'))
+                    user = client.get_user(int(checa_arquivo(str(ctx.message.author.id), 'Agiota')))
+                    await ctx.send(f'{ctx.message.author.name} pagou {format(checa_arquivo(str(ctx.message.author.id), "Divida"))} falcoins de comissão. Restando 0 de débito com {user.name}')
+                    muda_divida(str(ctx.message.author.id), -int(checa_arquivo(str(ctx.message.author.id), 'Divida')))
+                    zera_divida(str(ctx.message.author.id))
+                else:    
+                    muda_saldo(str(checa_arquivo(str(ctx.message.author.id), 'Agiota')), comissao)
+                    user = client.get_user(int(checa_arquivo(str(ctx.message.author.id), 'Agiota')))
+                    muda_divida(str(ctx.message.author.id), -comissao)
+                    if checa_arquivo(str(ctx.message.author.id), 'Divida') == 0:
                         zera_divida(str(ctx.message.author.id))
-                    else:    
-                        muda_saldo(str(checa_arquivo(str(ctx.message.author.id), 'Agiota')), comissao)
-                        user = client.get_user(int(checa_arquivo(str(ctx.message.author.id), 'Agiota')))
-                        muda_divida(str(ctx.message.author.id), -comissao)
-                        if checa_arquivo(str(ctx.message.author.id), 'Divida') == 0:
-                            zera_divida(str(ctx.message.author.id))
-                        await ctx.send(f'{ctx.message.author.name} pagou {format(comissao)} falcoins de comissão. Restando {format(checa_arquivo(str(ctx.message.author.id), "Divida"))} de débito com {user.name}')
-            else:
-                porcentagem = random.randint(10,90)
-                total = int((porcentagem * int(arg)) / 100)
-                if total == 0:
-                    total = 1
-                muda_saldo(str(ctx.message.author.id), -total)
-                await ctx.send (f'{ctx.message.author.mention} você perdeu {format(total)} falcoins :slight_frown: *Saldo atual*: {format(checa_arquivo(str(ctx.message.author.id), "Falcoins"))}')
-        elif int(arg) <= 0:
-            await ctx.send(f'{ctx.message.author.mention} {arg} não é um valor válido... :rage:')
+                    await ctx.send(f'{ctx.message.author.name} pagou {format(comissao)} falcoins de comissão. Restando {format(checa_arquivo(str(ctx.message.author.id), "Divida"))} de débito com {user.name}')
         else:
-            await ctx.send(f'{ctx.message.author.mention} você não tem falcoins suficiente para esta aposta! :rage:')
-    except ValueError:
-        erro = ''
-        for c in args:
-            erro += c
-            erro += ' '
-        await ctx.send(f'{ctx.message.author.mention} {arg}{erro} não é um valor válido... :rage:')
+            total = int((random.randint(10,90) * int(arg)) / 100)
+            if total == 0:
+                total = 1
+            muda_saldo(str(ctx.message.author.id), -total)
+            await ctx.send (f'{ctx.message.author.mention} você perdeu {format(total)} falcoins :slight_frown: *Saldo atual*: {format(checa_arquivo(str(ctx.message.author.id), "Falcoins"))}')
+    elif int(arg) <= 0:
+        await ctx.send(f'{ctx.message.author.mention} {arg} não é um valor válido... :rage:')
+    else:
+        await ctx.send(f'{ctx.message.author.mention} você não tem falcoins suficiente para esta aposta! :rage:')
 
 @commands.guild_only()
 @client.command(aliases=['lb'])
@@ -201,7 +227,15 @@ async def apostar(ctx, arg, *args):
 async def lootbox(ctx):
         global elootbox
         cria_banco(str(ctx.message.author.id))
-        lb = random.randint(200, 600) * elootbox
+        minimo = int(checa_arquivo(str(ctx.message.author.id), 'Falcoins')) / 10
+        maximo = int(checa_arquivo(str(ctx.message.author.id), 'Falcoins')) / 5
+        if minimo >= 10000:
+            minimo = int(checa_arquivo(str(ctx.message.author.id), 'Falcoins')) / 100
+            maximo = int(checa_arquivo(str(ctx.message.author.id), 'Falcoins')) / 20
+        if minimo < 200 or maximo < 600:
+            minimo = 200
+            maximo = 600
+        lb = random.randint(int(minimo), int(maximo)) * elootbox
         muda_saldo(str(ctx.message.author.id), lb)
         await ctx.send(f' Parabéns {ctx.message.author.mention}! Você ganhou **{lb}** falcoins :heart_eyes:')
         @client.event
@@ -214,6 +248,24 @@ async def lootbox(ctx):
                 print(error)
 
 @commands.guild_only()
+@client.command(aliases=['3'])
+@commands.cooldown(1, 86400, commands.BucketType.user)
+async def tres(ctx):
+    cria_banco(str(ctx.message.author.id))
+    muda_saldo(str(ctx.message.author.id), 3)
+    await ctx.send(f' Parabéns {ctx.message.author.mention}! Você ganhou **3** falcoins :heart_eyes:')
+    @client.event
+    async def on_command_error(ctx,error):
+        if "You are on cooldown." in str(error):
+            await ctx.send(f'{ctx.message.author.mention} faltam **{tempo_formatado(error)}** para você resgatar a lootbox grátis!')
+        elif "Command not found" in str(error):
+            pass
+        else:
+            print(error)
+
+
+
+@commands.guild_only()
 @client.command()
 async def doar(ctx, arg, arg2):
     cria_banco(str(ctx.message.author.id))
@@ -223,13 +275,22 @@ async def doar(ctx, arg, arg2):
         muda_saldo(str(ctx.message.author.id), -int(arg2))
         muda_saldo(arg[3:-1], int(arg2))
         await ctx.send(f'{ctx.message.author.mention} transferiu {format(arg2)} falcoins para {arg}')
+        if checa_arquivo(str(ctx.message.author.id), 'Divida') > 0 and checa_arquivo(str(ctx.message.author.id), 'Agiota') == arg[3:-1]:
+                if int(arg2) >= checa_arquivo(str(ctx.message.author.id), 'Divida'):
+                    muda_saldo(arg[3:-1], checa_arquivo(str(ctx.message.author.id), 'Divida'))
+                    user = client.get_user(int(checa_arquivo(str(ctx.message.author.id), 'Agiota')))
+                    await ctx.send(f'{ctx.message.author.name} pagou {format(checa_arquivo(str(ctx.message.author.id), "Divida"))} falcoins de comissão. Restando 0 de débito com {user.name}')
+                    muda_divida(str(ctx.message.author.id), -int(checa_arquivo(str(ctx.message.author.id), 'Divida')))
+                    zera_divida(str(ctx.message.author.id))
+                else:    
+                    muda_saldo(str(checa_arquivo(str(ctx.message.author.id), 'Agiota')), int(arg2))
+                    user = client.get_user(int(checa_arquivo(str(ctx.message.author.id), 'Agiota')))
+                    muda_divida(str(ctx.message.author.id), -int(arg2))
+                    if checa_arquivo(str(ctx.message.author.id), 'Divida') == 0:
+                        zera_divida(str(ctx.message.author.id))
+                    await ctx.send(f'{ctx.message.author.name} pagou {format(arg2)} falcoins de comissão. Restando {format(checa_arquivo(str(ctx.message.author.id), "Divida"))} de débito com {user.name}')
     else:
         await ctx.send(f'{ctx.message.author.mention} você não tem falcoins suficiente para esta doação! :rage:')
-
-@commands.guild_only()
-@client.command()
-async def sobre(ctx, arg):
-    await ctx.invoke(client.get_command('eu'), arg=arg[3:-1])
 
 @commands.guild_only()
 @client.command()
@@ -237,7 +298,7 @@ async def duelo(ctx, arg, arg2):
     arg = arg[3:-1]
     if str(ctx.message.author.id) != arg:
         gifs = ['4.gif', '2.gif', '3.gif', '4.gif']
-        user = client.get_user(int(arg))
+        user = await ctx.message.guild.fetch_member(int(arg))
         cria_banco(str(ctx.message.author.id))
         cria_banco(str(arg))
         arg2 = arg_especial(arg2,str(ctx.message.author.id))
@@ -297,7 +358,7 @@ async def duelo(ctx, arg, arg2):
 @commands.guild_only()
 @client.command()
 async def rank(ctx, local=True):
-    with open('falbot2.json', 'r') as f:
+    with open('falbot.json', 'r') as f:
         banco = json.load(f)
     x = [str(c.id) for c in ctx.guild.members]
     chaves = []
@@ -340,7 +401,7 @@ async def rank_global(ctx):
 async def investir(ctx, arg, arg2):
     arg = arg[3:-1]
     if str(ctx.message.author.id) != arg:
-        user = client.get_user(int(arg))
+        user = await ctx.message.guild.fetch_member(int(arg))
         cria_banco(str(ctx.message.author.id))
         cria_banco(arg)
         arg2 = arg_especial(arg2, str(ctx.message.author.id))
@@ -439,7 +500,7 @@ async def comprar(ctx, arg):
                     await ctx.send(f'{ctx.message.author.mention} você precisa ter o cargo de Pardal antes de comprar esse cargo! :rage:')
             else:
                 await ctx.send(f'{ctx.message.author.mention} você não tem falcoins suficiente para comprar esse cargo! :rage:')
-    elif arg == "3":
+    elif arg == "3":s
         role = discord.utils.get(ctx.guild.roles, name="Falcão")
         if role in ctx.message.author.roles:
             await ctx.send(f'{ctx.message.author.mention} você já possui esse cargo! :rage:')
@@ -457,123 +518,5 @@ async def comprar(ctx, arg):
                     await ctx.send(f'{ctx.message.author.mention} você precisa ter o cargo de Tucano antes de comprar esse cargo! :rage:')
             else:
                 await ctx.send(f'{ctx.message.author.mention} você não tem falcoins suficiente para comprar esse cargo! :rage:') 
-
-@commands.guild_only()
-@client.command()
-async def sugestao(ctx, *args):
-    with open('sugestões.txt', 'a') as arquivo:
-        sugestao = ''
-        for c in args:
-            sugestao += ' '
-            sugestao += c
-            sugestao += ' '
-        arquivo.write(f'\n{sugestao}')
-        arquivo.close()
-    await ctx.send(f'{ctx.message.author.mention} sua sugestão foi salva com suscesso, obrigado! :smiling_face_with_3_hearts:')
-
-@commands.guild_only()
-@client.command()
-@has_permissions(administrator = True)
-async def prefixo(ctx, arg):
-    with open('prefixos.json', 'r') as f:
-        prefixos = json.load(f)
-    
-    prefixos[str(ctx.guild.id)] = arg
-
-    with open('prefixos.json', 'w') as f:
-        json.dump(prefixos, f, indent=4)
-    
-    await ctx.send(f'{ctx.message.author.mention} o prefixo do servidor foi mudado para "{arg}"  :smile:')
-
-@commands.guild_only()
-@client.command()
-async def tetris(ctx):
-    
-    driver = webdriver.Chrome(ChromeDriverManager().install())
-    driver.get('https://jstris.jezevec10.com/')
-
-    ### creates room
-    lobbyB = driver.find_element_by_id('lobby')
-    lobbyB.click()
-
-    createB = driver.find_element_by_id('createRoomButton')
-    createB.click()
-
-    privateC = driver.find_element_by_id('isPrivate')
-    privateC.click()
-
-    sleep(5)
-
-    createBF = driver.find_element_by_id('create')
-    createBF.click()
-
-    sleep(10)
-
-    joinLink = driver.find_element_by_class_name('joinLink')
-    await ctx.send(joinLink.get_attribute('innerHTML'))
-
-    sleep(30)
-
-    driver.quit()
-
-@commands.guild_only()
-@client.command()
-async def limpa(ctx, arg):
-    canal = ctx.channel
-    messages = await canal.history(limit=int(arg) + 1).flatten()
-    for message in messages:
-        await message.delete()
-
-@commands.guild_only()
-@client.command()
-async def glm(ctx):
-    canal = ctx.channel
-    messages = await canal.history(limit=1).flatten()
-    for message in messages:
-        await message.delete()
-    await ctx.send('Não.')
-
-@commands.guild_only()
-@client.command()
-async def lena(ctx):
-    canal = ctx.channel
-    messages = await canal.history(limit=1).flatten()
-    for message in messages:
-        await message.delete()
-    await ctx.send('Sim.')
-
-@commands.guild_only()
-@client.command(aliases=['help'])
-async def comandos(ctx):
-    embed = discord.Embed(
-        title='Comandos para sala de jogos',
-        color=discord.Color.green()
-    )
-    embed.add_field(name=f"?eu", value=f'Mostra os seus dados', inline=False)
-    embed.add_field(name=f"?lootbox", value=f'Resgata sua lootbox grátis(disponível a cada 30 minutos)', inline=False)
-    embed.add_field(name=f"?sobre [@pessoa]", value=f'Mostra os dados sobre a pessoa marcada', inline=False)
-    embed.add_field(name="?doar [@pessoa] [valor]", value='Doa o valor inserido para a pessoa marcada', inline=False)
-    embed.add_field(name=f"?apostar [valor]", value=f'Aposta o valor ou porcentagem indicado, com ganhos até 100%!', inline=False)
-    embed.add_field(name=f"?duelo [@pessoa] [valor]", value=f'Duela com a pessoa marcada. apostando o valor indicado', inline=False)
-    embed.add_field(name=f"?rank", value=f'Retorna a tabela de ranking do servidor atual por falcoins', inline=False)
-    embed.add_field(name=f"?rank_global", value=f'Retorna a tabela de ranking global por falcoins', inline=False)
-    embed.add_field(name=f"?loja", value=f"Retorna a tabela de compras e seus valores", inline=False)
-    embed.add_field(name=f"?comprar [Número do item]", value=f"Compra o item citado no parametro se você tem os requisitos")
-    embed.add_field(name=f"?investir [@pessoa] [Quantidade]", value=f"Tranfere a quantidade inserida para a pessoa, e ela pagará uma dívida com parte dos ganhos das apostas", inline=False)
-    embed.add_field(name=f'Exemplos', value=f'?sobre @Falcão = retorna os dados do usuário Falcão \n ?eu = retorna os seus dados de usuário \n ?lootbox = Resgata a lootbox se disponível \n ?apostar 10 = aposta 10 falcoins, podendo lucar ou perder \n ?duelo @Falcão 100 = aposta 100 falcoins com falcão em um duelo da sorte \n ?rank = Retorna os 10 primeiros em quantidade de falcoins do servidor \n ?rank_global = Retorna os 10 primeiros em quantidade de falcoins global \n ?loja = Retorna a tabela para compras \n ?comprar 1 = Se tiver todos os requisitos, compra o item número 1 \n ?investir @Falcão 200 = Empresta 200 falcoins a falcão, ao quitar a dívida, você ganhará uma porcentagem a mais dependendo do seu cargo \n ?doar @Falcão 100 = doa 100 falcoins para o usuário Falcão', inline=False)
-    embed.set_footer(text='by Falcão ❤️')
-    await ctx.send(embed=embed)
-    embed1 = discord.Embed(
-        title='Outros comandos',
-        color=discord.Color.red()
-    )
-    embed1.add_field(name=f"?prefixo [Prefixo desejado]", value=f'Muda o prefixo do bot no servidor, OBS: só administradores podem usar', inline=False)
-    embed1.add_field(name=f"?sugestao [...]", value=f'Anota sua sugestão para o bot!', inline=False)
-    embed1.add_field(name=f'?help/?comandos', value=f'Devolve a lista de comandos que você está vendo agora', inline=False)
-    embed1.add_field(name=f'?limpa [num. de msgs]', value=f'Limpa o numero de mensagens especificado no canal atual', inline=False)
-    embed1.add_field(name=f'?tetris', value=f'Cria uma sala privada no jstris pra você!', inline=False)
-    embed1.add_field(name=f'Exemplos', value=f'?prefixo ! = muda o prefixo do Falbot no servidor para ! \n ?Limpa 10 = o bot vai excluir a mensagem invocando o comando juntamente com as 10 anteriores')
-    embed1.set_footer(text='by Falcão ❤️')
-    await ctx.send(embed=embed1)
 
 client.run('SECRET-TOKEN')
