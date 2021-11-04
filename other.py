@@ -1,4 +1,3 @@
-
 import discord
 import json
 from discord.ext import commands
@@ -6,7 +5,7 @@ from discord.ext.commands import has_permissions
 from math import sqrt
 from random import randint
 from random import choice
-from funcoes import secret_token, explain
+from funcoes import *
 
 def get_prefix(bot, message):
     with open('prefixes.json', 'r') as f:
@@ -27,6 +26,13 @@ def get_prefix(bot, message):
 
 intents = discord.Intents(messages=True, guilds=True, members=True, reactions=True, guild_messages=True)
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents, help_command=None)
+
+@bot.event
+async def on_command_error(ctx,error):
+    if "is not found" in str(error):
+        pass
+    else:
+        print(f'O erro foi no comando {ctx.command} e aconteceu {error}')
 
 @commands.guild_only()
 @bot.command()
@@ -85,13 +91,6 @@ async def lena(ctx, ruido, *args):
 
 @commands.guild_only()
 @bot.command()
-async def luh(ctx):
-    #amor da minha vida <3
-    await ctx.message.delete()
-    await ctx.send(':two_hearts:')
-
-@commands.guild_only()
-@bot.command()
 async def flor(ctx):
     await ctx.message.delete()
     await ctx.send(':cherry_blossom:')
@@ -131,35 +130,35 @@ async def math(ctx, *args):
 async def coinflip(ctx):
     x = randint(0, 1)
     if x == 0:
-        await ctx.send('head')
+        await ctx.send('cara')
     else:
-        await ctx.send('tail')
+        await ctx.send('coroa')
 
 @commands.guild_only()
 @bot.command()
-async def simounao(ctx):
-    message = await ctx.send('✅sim 🚫não')
-    await message.add_reaction('✅')
-    await message.add_reaction('🚫')
+async def voto(ctx, *, arg=''):
+    embed = discord.Embed(color=discord.Color(await get_role_color(ctx, ctx.message.author.id)), description=arg)
+    embed.set_author(name=f'novo voto de {ctx.author.name}!', icon_url=ctx.message.author.avatar_url)
+    message = await ctx.send(embed=embed)
+    await message.add_reaction('👍')
+    await message.add_reaction('👎')
+    await ctx.message.delete()
 
 @commands.guild_only()
 @bot.command()
-async def bonk(ctx, *args):
-    for c in list(args):
-        try:
-            if not bot.get_user(int(c[3:-1])) != None:
-                args.remove(c)
-        except:
-            args.remove(c)
-    text = ''
-    for c in args:
-        text += c
-        text += ' '
-    await ctx.send(f'{text}',file=discord.File('bonk.gif'))
+async def falar(ctx, *, arg=''):
+    if arg == '':
+        await ctx.send(embed=explain('falar'))
+    else:
+        arg = arg.replace("@everyone", "everyone")
+        arg = arg.replace("@here", "here")
+        await ctx.send(arg)
+        await ctx.message.delete()
 
 @commands.guild_only()
-@bot.command(aliases=['help'])
+@bot.command(aliases=['help','ajuda'])
 async def comandos(ctx, command=''):
     await ctx.send(embed=explain(command, ctx.guild.id))
 
-bot.run(secret_token)
+if __name__ == '__main__':
+    bot.run(secret_token)
