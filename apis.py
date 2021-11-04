@@ -56,4 +56,4 @@ async def tetris(ctx):
 
     driver.quit()
 
-client.run('NzQyMzMxODEzNTM5ODcyNzk4.XzEkYA.zxlzvzmaWBW8KMTs8Jrb6Zk-DfY')
+client.run('SECRET-TOKEN')
