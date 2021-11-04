@@ -1,3 +1,4 @@
+
 import json
 
 def cria_banco(pessoa):
@@ -7,7 +8,7 @@ def cria_banco(pessoa):
     try:
         banco[pessoa]
     except KeyError:
-        banco[pessoa] = {'Falcoins': 0, 'Vitorias': 0, 'Divida': 0, 'Agiota': '', 'Cargo': '', 'Audacias': 0}
+        banco[pessoa] = {'Falcoins': 0, 'Vitorias': 0, 'Divida': 0, 'Agiota': '', 'Cargo': ''}
     finally:
         with open('falbot.json', 'w') as f:
             json.dump(banco, f, indent=4)
@@ -17,6 +18,8 @@ def muda_saldo(pessoa, dinheiro):
         banco = json.load(f)
 
     banco[pessoa]['Falcoins'] += dinheiro
+    if banco[pessoa]['Falcoins'] < 0:
+        banco[pessoa]['Falcoins'] = 0
 
     with open('falbot.json', 'w') as f:
         json.dump(banco, f, indent=4)
@@ -93,6 +96,8 @@ def arg_especial(arg,pessoa):
         arg = banco[pessoa]['Falcoins']
     elif arg == 'metade':
         arg = int(banco[pessoa]['Falcoins'] / 2)
+    elif '.' in arg:
+        arg = arg.replace(".", "")
     else:
         for c in arg:
             if c == '%':
@@ -133,15 +138,6 @@ def zera_divida(pessoa):
 
         with open('falbot.json', 'w') as f:
             json.dump(banco, f, indent=4)
-
-def muda_audacias(pessoa):
-    with open('falbot.json','r') as f:
-        banco = json.load(f)
-
-    banco[pessoa]['Audacias'] += 1
-
-    with open('falbot.json', 'w') as f:
-        json.dump(banco, f, indent=4)
 
 def checa_arquivo(pessoa, campo=''):
     with open('falbot.json','r') as f:
