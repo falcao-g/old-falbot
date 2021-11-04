@@ -2,64 +2,65 @@ import json
 
 def cria_banco(pessoa):
     assert pessoa.isnumeric()
-    with open('falbot2.json', 'r') as f:
+    with open('falbot.json', 'r') as f:
             banco = json.load(f)
     try:
         banco[pessoa]
     except KeyError:
         banco[pessoa] = {'Falcoins': 0, 'Vitorias': 0, 'Divida': 0, 'Agiota': '', 'Cargo': '', 'Audacias': 0}
     finally:
-        with open('falbot2.json', 'w') as f:
+        with open('falbot.json', 'w') as f:
             json.dump(banco, f, indent=4)
 
 def muda_saldo(pessoa, dinheiro):
-    with open('falbot2.json','r') as f:
+    with open('falbot.json','r') as f:
         banco = json.load(f)
 
     banco[pessoa]['Falcoins'] += dinheiro
 
-    with open('falbot2.json', 'w') as f:
+    with open('falbot.json', 'w') as f:
         json.dump(banco, f, indent=4)
 
 def muda_divida(pessoa, dinheiro):
-    with open('falbot2.json','r') as f:
+    with open('falbot.json','r') as f:
         banco = json.load(f)
 
     banco[pessoa]['Divida'] += dinheiro
     if banco[pessoa]['Divida'] <= 0:
         zera_divida(pessoa)
 
-    with open('falbot2.json', 'w') as f:
+    with open('falbot.json', 'w') as f:
         json.dump(banco, f, indent=4)
 
 def muda_agiota(pessoa, agiota):
-    with open('falbot2.json','r') as f:
+    with open('falbot.json','r') as f:
         banco = json.load(f)
 
     banco[pessoa]['Agiota'] = agiota
 
-    with open('falbot2.json', 'w') as f:
+    with open('falbot.json', 'w') as f:
         json.dump(banco, f, indent=4)
 
 def muda_vitoria(pessoa):
-    with open('falbot2.json','r') as f:
+    with open('falbot.json','r') as f:
         banco = json.load(f)
 
     banco[pessoa]['Vitorias'] += 1
 
-    with open('falbot2.json', 'w') as f:
+    with open('falbot.json', 'w') as f:
         json.dump(banco, f, indent=4)
 
 def muda_cargo(pessoa, cargo):
-    with open('falbot2.json','r') as f:
+    with open('falbot.json','r') as f:
         banco = json.load(f)
 
     banco[pessoa]['Cargo'] = cargo
 
-    with open('falbot2.json', 'w') as f:
+    with open('falbot.json', 'w') as f:
         json.dump(banco, f, indent=4)
 
 def tempo_formatado(erro):
+    hora = 0
     minuto = 0
     segundo = 0
     formata = ''
@@ -69,19 +70,23 @@ def tempo_formatado(erro):
             formata += c
     segundo += int(formata[0:-2])
     minuto += segundo//60
+    hora += minuto//60
     segundo -= minuto*60
+    minuto -= hora*60
     if len(str(minuto)) == 1 and len(str(segundo)) == 1: 
-        formata = f'00:0{minuto}:0{segundo}'
+        formata = f'{hora}:0{minuto}:0{segundo}'
     elif len(str(minuto)) == 1 and len(str(segundo)) == 2:
-        formata = f'00:0{minuto}:{segundo}'
+        formata = f'{hora}:0{minuto}:{segundo}'
     elif len(str(minuto)) == 2 and len(str(segundo)) == 1:
-        formata = f'00:{minuto}:0{segundo}'
+        formata = f'{hora}:{minuto}:0{segundo}'
     else:
-        formata = f'00:{minuto}:{segundo}'
+        formata = f'{hora}:{minuto}:{segundo}'
+    if len(str(hora)) == 1:
+        formata = '0' + formata
     return formata
 
 def arg_especial(arg,pessoa):
-    with open('falbot2.json', 'r') as f:
+    with open('falbot.json', 'r') as f:
         banco = json.load(f)
 
     if arg == 'tudo':
@@ -107,7 +112,7 @@ def format(falcoins):
     return pop_2[::-1]
 
 def checa_cargo(pessoa):
-    with open('falbot2.json', 'r') as f:
+    with open('falbot.json', 'r') as f:
         banco = json.load(f)
 
     if banco[pessoa]['Cargo'] == '':
@@ -120,26 +125,26 @@ def checa_cargo(pessoa):
         return 3
 
 def zera_divida(pessoa):
-       with open('falbot2.json','r') as f:
+       with open('falbot.json','r') as f:
         banco = json.load(f)
 
         banco[pessoa]['Divida'] = 0
         banco[pessoa]['Agiota'] = ''
 
-        with open('falbot2.json', 'w') as f:
+        with open('falbot.json', 'w') as f:
             json.dump(banco, f, indent=4)
 
 def muda_audacias(pessoa):
-    with open('falbot2.json','r') as f:
+    with open('falbot.json','r') as f:
         banco = json.load(f)
 
     banco[pessoa]['Audacias'] += 1
 
-    with open('falbot2.json', 'w') as f:
+    with open('falbot.json', 'w') as f:
         json.dump(banco, f, indent=4)
 
 def checa_arquivo(pessoa, campo=''):
-    with open('falbot2.json','r') as f:
+    with open('falbot.json','r') as f:
         banco = json.load(f)
     if campo == '':
         return banco[pessoa]
